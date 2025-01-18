@@ -1,6 +1,7 @@
-# Return Of The Snake
+
 
 # Retro Snake Game on FPGA
+Snake game implementation on the Artix 7 Nexys4 DDR FPGA board and displaying it using a VGA compatible monitor with a resolution of 640 * 480 pixels.
 
 ## Abstract
 This project implements the retro **Snake Game** on an FPGA board using Verilog HDL. Through this project, we aim to demonstrate the capabilities of FPGA platforms in creating real-time, interactive digital environments. The project showcases digital design, FPGA programming, and hardware-software integration, serving as a hands-on experience in these areas.
