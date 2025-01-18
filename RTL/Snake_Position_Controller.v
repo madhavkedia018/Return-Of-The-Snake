@@ -37,7 +37,7 @@ end
 always @(posedge clock or posedge reset) begin
     if (reset == 1) begin
         pos_x_temp = 320;
-        pos_y_temp = 240;
+        pos_y_temp = 120;
         last_vel_x = 0;
         last_vel_y = 0;
         pos_x_body = 990'b0;
