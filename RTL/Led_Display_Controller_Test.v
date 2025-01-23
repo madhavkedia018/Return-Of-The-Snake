@@ -2,7 +2,6 @@
 module Led_Display_Controller_Test(
     output hsync,vsync,
     output [3:0] vga_r,vga_g,vga_b,
-    //output clock_1s_led,
     
     output [7:0]AN,         // Anodes (active low)
     output [6:0]seg,        // segment pins (active low)
@@ -23,11 +22,11 @@ parameter [19:0]rand_seed = 212701;
 reg apple_eaten;
 reg [9:0]length = 0;
 wire [9:0]head_x,head_y;
-//wire clock_85Mhz;
 wire locked;
+
 assign head_x = pos_x[9:0];
 assign head_y = pos_y[9:0];
-//assign clock_1s_led = clock_1hz;
+
 
 
 reg [3:0] unit,tens,hundreds,thousands,h_unit,h_tens,h_hundreds,h_thousands;
@@ -78,9 +77,9 @@ always @(posedge clock_1hz or posedge reset) begin
         if (head_x <= curr_apple_x + 4 && head_x >= curr_apple_x - 4 &&
             head_y <= curr_apple_y + 4 && head_y >= curr_apple_y - 4) begin
             apple_eaten <= 1;
-            length <= length + 1;
-            score <= (length)*4;
-            if(score>high_score) begin high_score <= score+4; end
+            length <= length + 2;
+            score <= score + 4;
+           if(score>high_score) begin high_score <= score + 4; end
         end
         else begin
             apple_eaten <= 0;
