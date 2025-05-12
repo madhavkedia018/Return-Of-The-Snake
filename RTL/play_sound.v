@@ -12,7 +12,7 @@ module play_sound(
     assign AUD_SD = Alarm;
     
     always @(posedge clk)begin
-        if(counter == 212701 )begin
+        if(counter == 113635 )begin
             counter <= 0;
             clk_stb <= ~clk_stb;
         end else
