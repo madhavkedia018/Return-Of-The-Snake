@@ -1,6 +1,7 @@
 `timescale 1ns / 1ps
 module vga_controller(
     input clk_25Mhz,                // Main clock input
+    input clk_100Mhz,
     input rst,                // Reset signal
     input [999:0] x_input,      // X-coordinate (0-639 for 640x480 resolution)
     input [999:0] y_input,      // Y-coordinate (0-479 for 640x480 resolution)
@@ -14,7 +15,13 @@ module vga_controller(
     output reg vsync,         // Vertical sync output
     output reg [3:0] vga_r,   // VGA red signal
     output reg [3:0] vga_g,   // VGA green signal
-    output reg [3:0] vga_b    // VGA blue signal
+    output reg [3:0] vga_b,    // VGA blue signal
+    input signed [10:0] last_vel_x , last_vel_y,
+    output reg [9:0] h_counter ,  // Horizontal pixel counter (0 to 799)
+    output reg [9:0] v_counter , // Vertical pixel counter (0 to 524)
+    input[19:0] score,
+    input [19:0] high_score,
+    input collision
 );
 
     // VGA 640x480 @ 60Hz timing constants
@@ -34,10 +41,22 @@ module vga_controller(
     reg [99:0]temp_1s = 100'b1111111111;
     reg [999:0]value_x,value_y;
     integer i;
+    
+//    reg [9:0] h_counter = 0;
+//    reg [9:0] v_counter = 0;
+    
+    wire [7:0]value;
+    wire[7:0]value_go;
+    wire [0:7]data;
+    wire [0:15]data_go;
+    reg [3:0]x_1;
+    reg [3:0]x_1_go;
+    wire [3:0]y_1;
+    wire [3:0]y_1_go;
+  //  reg [19:0]score;
 
-    reg [9:0] h_counter = 0;  // Horizontal pixel counter (0 to 799)
-    reg [9:0] v_counter = 0;  // Vertical pixel counter (0 to 524)
-
+text_generator display_score(.clk(clk_100Mhz),.value(value),.data(data));
+go_generator display_game_over(.clk(clk_100Mhz),.value(value_go),.data(data_go));
 
     // VGA Horizontal and Vertical Counters
     always @(posedge clk_25Mhz or posedge rst) begin
@@ -80,6 +99,7 @@ module vga_controller(
         end
     end
 
+
     // Generate RGB values based on x and y input coordinates
     always @(posedge clk_25Mhz or posedge rst) begin
         if (rst) begin
@@ -90,17 +110,42 @@ module vga_controller(
             if (h_counter < H_VISIBLE_AREA && v_counter < V_VISIBLE_AREA) begin
                 value_x = x_input[999:0]; 
                 value_y = y_input[999:0];
-                if ( (h_counter <= value_x[9:0]+2 && h_counter >= value_x[9:0]-2 && v_counter <= value_y[9:0]+2 && v_counter >= value_y[9:0]-2) ||
-                (h_counter <= value_x[19:10]+2 && h_counter >= value_x[19:10]-2 && v_counter <= value_y[19:10]+2 && v_counter >= value_y[19:10]-2)||
-                (h_counter <= value_x[29:20]+2 && h_counter >= value_x[29:20]-2 && v_counter <= value_y[29:20]+2 && v_counter >= value_y[29:20]-2)||
-                (h_counter <= value_x[39:30]+2 && h_counter >= value_x[39:30]-2 && v_counter <= value_y[39:30]+2 && v_counter >= value_y[39:30]-2)||
-                (h_counter <= value_x[49:40]+2 && h_counter >= value_x[49:40]-2 && v_counter <= value_y[49:40]+2 && v_counter >= value_y[49:40]-2)||
-                (h_counter <= value_x[59:50]+2 && h_counter >= value_x[59:50]-2 && v_counter <= value_y[59:50]+2 && v_counter >= value_y[59:50]-2)||
-                (h_counter <= value_x[69:60]+2 && h_counter >= value_x[69:60]-2 && v_counter <= value_y[69:60]+2 && v_counter >= value_y[69:60]-2)||
-                (h_counter <= value_x[79:70]+2 && h_counter >= value_x[79:70]-2 && v_counter <= value_y[79:70]+2 && v_counter >= value_y[79:70]-2)||
-                (h_counter <= value_x[89:80]+2 && h_counter >= value_x[89:80]-2 && v_counter <= value_y[89:80]+2 && v_counter >= value_y[89:80]-2)||
-                (h_counter <= value_x[99:90]+2 && h_counter >= value_x[99:90]-2 && v_counter <= value_y[99:90]+2 && v_counter >= value_y[99:90]-2)||
-                (h_counter <= value_x[9:0] + 2 && h_counter >= value_x[9:0] - 2 && v_counter <= value_y[9:0] + 2 && v_counter >= value_y[9:0] - 2) ||
+                
+                
+                 if ((h_counter <= value_x[9:0]+2 && h_counter >= value_x[9:0]+1) && (v_counter <= value_y[9:0]-1 && v_counter >= value_y[9:0]-2)&& (last_vel_x==1))
+                begin  // Snake eyes set to dark red
+                    vga_r = 4'b0110;
+                    vga_g = 4'b0000;
+                    vga_b = 4'b0000;
+                end
+                else if ((h_counter <= value_x[9:0]-1 && h_counter >= value_x[9:0]-2) && (v_counter <= value_y[9:0]-1 && v_counter >= value_y[9:0]-2)&& (last_vel_x==-1))
+                begin  // Snake eyes set to dark red
+                    vga_r = 4'b0110;
+                    vga_g = 4'b0000;
+                    vga_b = 4'b0000;
+                end
+                else if (((h_counter <= value_x[9:0]+2 && h_counter >= value_x[9:0]+1) && (v_counter <= value_y[9:0]-1 && v_counter >= value_y[9:0]-2)||(h_counter <= value_x[9:0]-1 && h_counter >= value_x[9:0]-2) && (v_counter <= value_y[9:0]-1 && v_counter >= value_y[9:0]-2))&& (last_vel_y==-1))
+                begin  // Snake eyes set to dark red
+                    vga_r = 4'b0110;
+                    vga_g = 4'b0000;
+                    vga_b = 4'b0000;
+                end
+                else if (((h_counter <= value_x[9:0]+2 && h_counter >= value_x[9:0]+1) && (v_counter <= value_y[9:0]+2 && v_counter >= value_y[9:0]+1)||(h_counter <= value_x[9:0]-1 && h_counter >= value_x[9:0]-2) && (v_counter <= value_y[9:0]+2 && v_counter >= value_y[9:0]+1))&& (last_vel_y==1))
+                begin  // Snake eyes set to dark red
+                    vga_r = 4'b0110;
+                    vga_g = 4'b0000;
+                    vga_b = 4'b0000;
+                end
+                
+                
+                  else if ((h_counter <= value_x[9:0]+2 && h_counter >= value_x[9:0]-2) && (v_counter <= value_y[9:0]+2 && v_counter >= value_y[9:0]-2))
+                begin  // Snake head set to yellow
+                    vga_r = 4'b1111;
+                    vga_g = 4'b1111;
+                    vga_b = 4'b0000;
+                end
+                
+                else if ( 
                 (h_counter <= value_x[19:10] + 2 && h_counter >= value_x[19:10] - 2 && v_counter <= value_y[19:10] + 2 && v_counter >= value_y[19:10] - 2) ||
                 (h_counter <= value_x[29:20] + 2 && h_counter >= value_x[29:20] - 2 && v_counter <= value_y[29:20] + 2 && v_counter >= value_y[29:20] - 2) ||
                 (h_counter <= value_x[39:30] + 2 && h_counter >= value_x[39:30] - 2 && v_counter <= value_y[39:30] + 2 && v_counter >= value_y[39:30] - 2) ||
@@ -200,17 +245,18 @@ module vga_controller(
                 (h_counter <= value_x[979:970] + 2 && h_counter >= value_x[979:970] - 2 && v_counter <= value_y[979:970] + 2 && v_counter >= value_y[979:970] - 2) ||
                 (h_counter <= value_x[989:980] + 2 && h_counter >= value_x[989:980] - 2 && v_counter <= value_y[989:980] + 2 && v_counter >= value_y[989:980] - 2) ||
                 (h_counter <= value_x[999:990] + 2 && h_counter >= value_x[999:990] - 2 && v_counter <= value_y[999:990] + 2 && v_counter >= value_y[999:990] - 2)) begin
-                // Snake set to green
+                // Snake rest of the body set to green
                     vga_r = 4'b0000;
                     vga_g = 4'b1111;
                     vga_b = 4'b0000;
                 end
                 
-                 else if (((h_counter>=0 && h_counter<21)||(h_counter>619 && h_counter<641))&&((v_counter>=0 && v_counter<121)||(v_counter>359 && v_counter<481))||
-                ((h_counter>19 && h_counter<241)||(h_counter>399 && h_counter<621))&&((v_counter>=0 && v_counter<21)||(v_counter>459 && v_counter<481))) 
-                begin  // walls set to white
+                
+                 else if (((h_counter>=0 && h_counter<=10)||(h_counter>=630 && h_counter<=640))&&((v_counter>=0 && v_counter<121)||(v_counter>=360 && v_counter<=480))||
+                ((h_counter>=10 && h_counter<241)||(h_counter>399 && h_counter<=630))&&((v_counter>=0 && v_counter<=10)||(v_counter>=470 && v_counter<=480))) 
+                begin  // walls set to pink
                     vga_r = 4'b1111;
-                    vga_g = 4'b1111;
+                    vga_g = 4'b0111;
                     vga_b = 4'b1111;
                 end
                 else if(((h_counter>159 && h_counter<181)||(h_counter>219 && h_counter<241)||(h_counter>319 && h_counter<341)||(h_counter>419 && h_counter<441))&&((v_counter>179 && v_counter<301))||
@@ -221,12 +267,29 @@ module vga_controller(
                     vga_g = 4'b0000;
                     vga_b = 4'b1111;
                 end  
+                
+                 else if((((((h_counter>=40 && h_counter<=300) || (h_counter>=340 && h_counter<=600)) && (v_counter>=100 && v_counter<=105)) || 
+                 ((((h_counter>=40 && h_counter<=200) || (h_counter>=240 && h_counter<=400) || (h_counter>=440 && h_counter<=600)) && (v_counter>=375 && v_counter<=380)))) && (y_apple<80 || y_apple>400)) || 
+                 (((h_counter>=70 && h_counter<=75) || (h_counter>=575 && h_counter<=580)) && (v_counter>=60 && v_counter<=420) && (y_apple>320 && (x_apple>180 && x_apple<480))) ||
+                  (((h_counter>=100 && h_counter<=540 && v_counter>=125 && v_counter<=130) || 
+                  (((h_counter>=100 && h_counter<=260)||(h_counter>=340 && h_counter<=540)) && (v_counter>=350 && v_counter<=355)) ||
+                  (((h_counter>=100 && h_counter<=105) || (h_counter>=535 && h_counter<=540)) && (v_counter>=130 && v_counter<=350))) && 
+                  ((x_apple>180 && x_apple<420) && (y_apple>180 && y_apple<300))))
+                           
+                 begin 
+                  // dynamic walls set to blue 
+                    vga_r = 4'b0000;
+                    vga_g = 4'b0000;
+                    vga_b = 4'b1111;
+                end  
+                
                 else if (h_counter <= x_apple+2 && h_counter >= x_apple-2 && v_counter <= y_apple+2 && v_counter >= y_apple-2) begin
                     // apple set to red
                     vga_r = 4'b1111;
                     vga_g = 4'b0000;
                     vga_b = 4'b0000;
-                end          
+                    end
+                    
                 else begin
                     // Set background color (black)
                     vga_r = 0;
@@ -239,7 +302,58 @@ module vga_controller(
                 vga_g = 0;
                 vga_b = 0;
             end
-        end
-    end
+            
+            
+         
+       if(~((value == 0) || (~data[(h_counter-480)%8]) || (~data[(h_counter-128)%8]) ))
+            begin
+                 vga_r =4'b0111;
+                 vga_b =4'b0000;
+                 vga_g =4'b0000;
+            end
+            
+            
+      if((~((value_go == 0) || (~data_go[(h_counter-248)%16]) || (~data_go[(h_counter-328)%16]))) && (collision == 1) )
+            begin 
+                 vga_r =4'b0111;
+                 vga_b =4'b0000;
+                 vga_g =4'b0000;  
+            end     
+      end 
+  end
+  
+   
+ always @(posedge clk_25Mhz)
+ begin
+  if(h_counter>=480 && h_counter<=487)       x_1<=(score)/1000 + 1;
+  else if(h_counter>=488 && h_counter<=495)  x_1<=(score%1000)/100 + 1;
+  else if(h_counter>=496 && h_counter<=503)  x_1<=(score%100)/10 + 1;
+  else if(h_counter>=504 && h_counter<=511)  x_1<=(score%10)+ 1;
+  
+  else if(h_counter>=128 && h_counter<=135)  x_1<=(high_score)/1000 + 1 ;
+  else if(h_counter>=136 && h_counter<=143)  x_1<=(high_score%1000)/100 + 1;
+  else if(h_counter>=144 && h_counter<=151)  x_1<=(high_score%100)/10 + 1;
+  else if(h_counter>=152 && h_counter<=159)  x_1<=(high_score%10) + 1;
+  end
+  
+ always @(posedge clk_25Mhz)
+ begin
+  if(h_counter>=248 && h_counter<=263)       x_1_go<=1; //G
+  else if(h_counter>=264 && h_counter<=279)  x_1_go<=2; //A
+  else if(h_counter>=280 && h_counter<=295)  x_1_go<=3; //M
+  else if(h_counter>=296 && h_counter<=311)  x_1_go<=4; //E
+
+  else if(h_counter>=328 && h_counter<=343)  x_1_go<=5; //0
+  else if(h_counter>=344 && h_counter<=359)  x_1_go<=6; //V
+  else if(h_counter>=360 && h_counter<=375)  x_1_go<=4; //E
+  else if(h_counter>=376 && h_counter<=391)  x_1_go<=7; //R
+  
+end
+ 
+assign  y_1 = v_counter-1;
+assign y_1_go = v_counter-144;
+assign value=(((h_counter>=128 && h_counter<=159)||(h_counter>=480 && h_counter<=511))  && (v_counter>=1 && v_counter<=10))?{x_1,y_1}:8'b0;
+assign value_go=(((h_counter>=248 && h_counter<=311)||(h_counter>=328 && h_counter<=391))  && (v_counter>=144 && v_counter<=159))?{x_1_go,y_1_go}:8'b0;
+
 
 endmodule
