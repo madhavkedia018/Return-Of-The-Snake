@@ -1,8 +1,8 @@
 `timescale 1ns / 1ps
-module Snake_Position_Controller(output [999:0] pos_x, pos_y, input [3:0] buttons, input clock, reset,input [9:0]length);
+module Snake_Position_Controller(output [999:0] pos_x, pos_y,  input clock, reset,input [9:0]length, 
+input [3:0]velocity ,input [9:0] x_apple, input [9:0] y_apple , output reg signed [10:0] last_vel_x , last_vel_y , input [3:0] buttons , output reg collision);
 reg signed [10:0] pos_x_temp, pos_y_temp;
 reg signed [10:0] vel_x, vel_y;
-reg signed [10:0] last_vel_x , last_vel_y;
 reg [989:0] pos_x_body,pos_y_body;
 reg [989:0]temp_1s = ~(990'b0);
 
@@ -15,22 +15,22 @@ parameter [10:0] monitor_height_pixels = 480;
 always @(*) begin
     vel_x = last_vel_x;
     vel_y = last_vel_y;
-    if (buttons[0] == 1) begin // left
+    if ( buttons[0]==1) begin // left
       if(last_vel_x != 1)  begin
         vel_x = -1;
         vel_y = 0;    end
     end 
-    else if (buttons[1] == 1) begin // down
+    else if (buttons[1]==1 ) begin // down
        if(last_vel_y != -1)  begin
         vel_x = 0;
         vel_y = 1;     end // inverted Y axis
     end 
-    else if (buttons[2] == 1) begin // right
+    else if (buttons[2]==1) begin // right
       if(last_vel_x != -1)  begin
         vel_x = 1;
         vel_y = 0;    end
     end 
-    else if (buttons[3] == 1) begin // up
+    else if ( buttons[3]==1) begin // up
         if(last_vel_y != 1)  begin
         vel_x = 0;
         vel_y = -1;        end// inverted Y axis
@@ -49,7 +49,7 @@ always @(posedge clock or posedge reset) begin
    
     else begin
         
-        //if(length > 0)begin
+        
             pos_x_body = pos_x_body << 10;
             pos_y_body = pos_y_body << 10;
             
@@ -57,14 +57,20 @@ always @(posedge clock or posedge reset) begin
             pos_y_body[9:0] = pos_y_temp[9:0];
             
             pos_x_body[989:0] = pos_x_body[989:0] & ~(temp_1s << length*10);
-        //end
+     
         
         
-       if (!(((pos_x_temp>=0 && pos_x_temp<21)||(pos_x_temp>619 && pos_x_temp<641))&&((pos_y_temp>=0 && pos_y_temp<121)||(pos_y_temp>359 && pos_y_temp<481))||
-                ((pos_x_temp>19 && pos_x_temp<241)||(pos_x_temp>399 && pos_x_temp<621))&&((pos_y_temp>=0 && pos_y_temp<21)||(pos_y_temp>459 && pos_y_temp<481)) ||  
+       if (!(((pos_x_temp>=0 && pos_x_temp<11)||(pos_x_temp>629 && pos_x_temp<641))&&((pos_y_temp>=0 && pos_y_temp<121)||(pos_y_temp>359 && pos_y_temp<481))||
+                ((pos_x_temp>=10 && pos_x_temp<241)||(pos_x_temp>399 && pos_x_temp<=630))&&((pos_y_temp>=0 && pos_y_temp<11)||(pos_y_temp>469 && pos_y_temp<481)) ||  
                 ((pos_x_temp>159 && pos_x_temp<181)||(pos_x_temp>219 && pos_x_temp<241)||(pos_x_temp>319 && pos_x_temp<341)||(pos_x_temp>419 && pos_x_temp<441))&&((pos_y_temp>179 && pos_y_temp<301))||
                 ((pos_x_temp>239 && pos_x_temp<281)||(pos_x_temp>339 && pos_x_temp<381)||(pos_x_temp>439 && pos_x_temp<481))&&((pos_y_temp>179 && pos_y_temp<201)||(pos_y_temp>229 && pos_y_temp<251)||
-                (pos_y_temp>279 && pos_y_temp<301))))
+                (pos_y_temp>279 && pos_y_temp<301))|| (((((pos_x_temp>=40 && pos_x_temp<=300) || (pos_x_temp>=340 && pos_x_temp<=600)) && (pos_y_temp>=100 && pos_y_temp<=105)) || 
+                 ((((pos_x_temp>=40 && pos_x_temp<=200) || (pos_x_temp>=240 && pos_x_temp<=400) || (pos_x_temp>=440 && pos_x_temp<=600)) && (pos_y_temp>=375 && pos_y_temp<=380)))) && (y_apple<80 || y_apple>400)) || 
+                (((pos_x_temp>=70 && pos_x_temp<=75) || (pos_x_temp>=575 && pos_x_temp<=580)) && (pos_y_temp>=60 && pos_y_temp<=420) && (y_apple>320 && (x_apple>180 && x_apple<480))) || 
+                (((pos_x_temp>=100 && pos_x_temp<=540 && pos_y_temp>=125 && pos_y_temp<=130) || 
+                  (((pos_x_temp>=100 && pos_x_temp<=260)||(pos_x_temp>=340 && pos_x_temp<=540)) && (pos_y_temp>=350 && pos_y_temp<=355)) ||
+                  (((pos_x_temp>=100 && pos_x_temp<=105) || (pos_x_temp>=535 && pos_x_temp<=540)) && (pos_y_temp>=130 && pos_y_temp<=350))) && 
+                  ((x_apple>180 && x_apple<420) && (y_apple>180 && y_apple<300)))))
                 begin  
                 
                if (!((pos_x_temp==pos_x_body[19:10] && pos_y_temp==pos_y_body[19:10]) ||  
@@ -164,35 +170,45 @@ always @(posedge clock or posedge reset) begin
                     (pos_x_temp==pos_x_body[959:950] && pos_y_temp==pos_y_body[959:950]) || 
                     (pos_x_temp==pos_x_body[969:960] && pos_y_temp==pos_y_body[969:960]) || 
                     (pos_x_temp==pos_x_body[979:970] && pos_y_temp==pos_y_body[979:970]) || 
-                    (pos_x_temp==pos_x_body[989:980] && pos_y_temp==pos_y_body[989:980])))
+                    (pos_x_temp==pos_x_body[989:980] && pos_y_temp==pos_y_body[989:980]) ))
                  
 
 
      begin
-        pos_x_temp = pos_x_temp + 3*vel_x;
-        pos_y_temp = pos_y_temp + 3*vel_y;
-     end end
+        pos_x_temp = pos_x_temp + vel_x * velocity;
+        pos_y_temp = pos_y_temp + vel_y * velocity;
+        collision  = 0;
+     end 
+      
+      else collision = 1; 
+      
+   end 
+     
+     
+      else collision = 1;
+    
                  
                  
                  
-        if(buttons[3] == 1 || buttons[2] == 1 || buttons[1] == 1 || buttons[0] == 1)begin
+        if( buttons[0]==1 || buttons[1]==1 || buttons[2]==1 || buttons[3]==1)
+           begin
             last_vel_x = vel_x;
             last_vel_y = vel_y;
-        end
+          end
 
 
 
-        if (pos_x_temp < 0) begin
+        if (pos_x_temp < 1) begin
             pos_x_temp = monitor_width_pixels - 1;  
         end
-        else if (pos_x_temp >= monitor_width_pixels) begin
-            pos_x_temp = 0;  
+        else if (pos_x_temp >= monitor_width_pixels -1) begin
+            pos_x_temp = 1;  
         end
         else if (pos_y_temp < 0) begin
             pos_y_temp = monitor_height_pixels - 1;  
         end
         else if (pos_y_temp >= monitor_height_pixels) begin
-            pos_y_temp = 0;  
+            pos_y_temp =0;  
         end
     end end
     
