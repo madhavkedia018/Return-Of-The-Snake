@@ -184,7 +184,10 @@ def restart_menu(score):
 # ===============================
 def pause_game():
     paused = True
+
+    # Show PAUSE screen first
     while paused:
+        window.fill((0,0,0))
         draw_text("GAME PAUSED", (255,255,0), WIDTH//2 - 110, HEIGHT//2 - 20)
         draw_text("Press R to Resume", (255,255,255), WIDTH//2 - 120, HEIGHT//2 + 20)
         pygame.display.update()
@@ -192,10 +195,25 @@ def pause_game():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit(); sys.exit()
+
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_r:
                     paused = False
+
         clock.tick(5)
+
+    # ===============================
+    # 3-second countdown before resume
+    # ===============================
+
+    for sec in range(3, 0, -1):
+        window.fill((0, 0, 0))
+        draw_text(f"Resuming in {sec}...", (0,255,0), WIDTH//2 - 100, HEIGHT//2 - 20)
+        pygame.display.update()
+        time.sleep(1)  # waits 1 second
+
+    # After countdown → return to game loop
+
 
 
 # ===============================
