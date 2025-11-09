@@ -16,8 +16,8 @@ clock = pygame.time.Clock()
 font = pygame.font.SysFont(None, 35)
 
 # --------- SOUND EFFECTS ----------
-eat_sound = pygame.mixer.Sound("eat.wav")
-gameover_sound = pygame.mixer.Sound("gameover.wav")
+eat_sound = pygame.mixer.Sound("eat.mp3")
+gameover_sound = pygame.mixer.Sound("gameover.mp3")
 # ----------------------------------
 
 def draw_text(msg, color, x, y):
