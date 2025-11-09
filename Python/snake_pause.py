@@ -182,12 +182,17 @@ def restart_menu(score):
 # ===============================
 # PAUSE SYSTEM
 # ===============================
-def pause_game():
+def pause_game(window_surface):
     paused = True
 
-    # Show PAUSE screen first
+    # -------------------------------------
+    # Capture the current game frame (frozen)
+    # -------------------------------------
+    frozen_frame = window_surface.copy()
+
+    # First — show "PAUSED" screen
     while paused:
-        window.fill((0,0,0))
+        window.blit(frozen_frame, (0, 0))
         draw_text("GAME PAUSED", (255,255,0), WIDTH//2 - 110, HEIGHT//2 - 20)
         draw_text("Press R to Resume", (255,255,255), WIDTH//2 - 120, HEIGHT//2 + 20)
         pygame.display.update()
@@ -202,18 +207,14 @@ def pause_game():
 
         clock.tick(5)
 
-    # ===============================
-    # 3-second countdown before resume
-    # ===============================
-
+    # -------------------------------------
+    # Resume Countdown WITHOUT clearing frame
+    # -------------------------------------
     for sec in range(3, 0, -1):
-        window.fill((0, 0, 0))
+        window.blit(frozen_frame, (0, 0))
         draw_text(f"Resuming in {sec}...", (0,255,0), WIDTH//2 - 100, HEIGHT//2 - 20)
         pygame.display.update()
-        time.sleep(1)  # waits 1 second
-
-    # After countdown → return to game loop
-
+        time.sleep(1)
 
 
 # ===============================
