@@ -263,7 +263,7 @@ def game_loop():
 
                 # PAUSE
                 if event.key == pygame.K_p:
-                    pause_game()
+                    pause_game(window)
 
         x += dx
         y += dy
